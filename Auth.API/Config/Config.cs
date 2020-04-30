@@ -10,8 +10,7 @@ namespace Auth.API.Conf
         {
             return new ApiResource[]
             {
-                new ApiResource("Business.API", "Business API")     ,
-                new ApiResource("Gateway.API", "Gateway API")
+                new ApiResource("gateway-api", "Gateway API")
             };
         }
 
@@ -25,11 +24,14 @@ namespace Auth.API.Conf
                     ClientName = "SPA Client",
                     ClientUri = "https://localhost:3000",
                     RequireConsent = false,
-                    AllowedGrantTypes = GrantTypes.Code,
+                    AllowedGrantTypes = GrantTypes.ClientCredentials,
                     RequirePkce = true,
                     RequireClientSecret = false,
                     AllowAccessTokensViaBrowser = true,
-
+                    ClientSecrets =
+                    {
+                        new Secret("secret".Sha256())
+                    },
                     RedirectUris =
                     {
                         "https://localhost:3000/",
@@ -39,7 +41,7 @@ namespace Auth.API.Conf
                     PostLogoutRedirectUris = { "https://localhost:3000/" },
                     AllowedCorsOrigins = { "https://localhost:3000" },
 
-                    AllowedScopes = {"gateway.api"}
+                    AllowedScopes = {"gateway-api"}
                 }
             };
         }
@@ -48,7 +50,8 @@ namespace Auth.API.Conf
         public static IEnumerable<IdentityResource> GetIdentityResources() =>
             new IdentityResource[]
             {
-                new IdentityResources.OpenId()
+                new IdentityResources.OpenId(),
+                 new IdentityResources.Profile()
             };
     }
 

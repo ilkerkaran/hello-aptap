@@ -20,17 +20,16 @@
     "Auth.API": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "auth",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "http://localhost:5000"
     },
     "Docker": {
-        "commandName": "Docker",
-        "launchBrowser": true,
-        "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/auth",
-        "publishAllPorts": true
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/auth",
+      "publishAllPorts": true
     }
   }
 }

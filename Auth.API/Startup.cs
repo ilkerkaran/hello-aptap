@@ -20,6 +20,7 @@ namespace Auth.API
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddControllers().AddNewtonsoftJson();
             var builder = services.AddIdentityServer(options =>
             {
                 options.Events.RaiseErrorEvents = true;
@@ -31,10 +32,8 @@ namespace Auth.API
                 .AddInMemoryApiResources(Config.GetApis())
                 .AddInMemoryClients(Config.GetClients());
 
-
-
             builder.AddDeveloperSigningCredential();
-            services.AddControllers();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,8 +49,6 @@ namespace Auth.API
             app.UseIdentityServer();
 
             app.UseRouting();
-
-            app.UseAuthorization();
 
 
             app.UseEndpoints(endpoints =>
