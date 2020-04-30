@@ -1,19 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Threading.Tasks;
-using Gateway.API.Clients;
-using Gateway.API.Config;
-using Gateway.API.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Ocelot.DependencyInjection;
+using Ocelot.Middleware;
+using System;
+using System.IO;
+using System.Text;
 
 namespace Gateway.API
 {
@@ -28,25 +24,21 @@ namespace Gateway.API
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
-        {
+        {           
 
-            services.Configure<External>(Configuration.GetSection(nameof(External)));
-            services.AddSingleton<External>();
+            var authenticationProviderKey = "auth-scheme";         
 
-            services.AddHttpClient<BusinessApiClient>("BusinessApi",
-                client =>
-                {
-                    client.BaseAddress = new Uri(Configuration.GetValue<string>("External:BusinessApiUrl"));
-                    
-                    client.DefaultRequestHeaders.Add("Accept", "application/json");
-                    client.DefaultRequestHeaders.Add("User-Agent", "Gateway.API");
-                    client.DefaultRequestHeaders.Add("api-key", "gateway-api-key");
-                });
-            //services.AddSingleton<BusinessApiClient>();
-            services.AddScoped<BusinessService>();
+            Action<IdentityServerAuthenticationOptions> opt = o =>
+            {
+                o.Authority = "http://localhost:5000";
+                o.ApiName = "gateway-api";
+                o.SupportedTokens = SupportedTokens.Both;
+                o.RequireHttpsMetadata = false;
+            };
 
-            services.AddCustomMvc(Configuration)
-           .AddCustomAuthentication(Configuration);
+            services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
+                .AddIdentityServerAuthentication(authenticationProviderKey, opt);
+            services.AddOcelot();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -58,54 +50,12 @@ namespace Gateway.API
             }
 
             app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
-        }
-    }
-    public static class ServiceCollectionExtensions
-    {
-        public static IServiceCollection AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
-        {
-            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Remove("sub");
 
-            var identityUrl = configuration.GetValue<string>("External:AuthApiUrl");
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-
-            })
-            .AddJwtBearer(options =>
-            {
-                options.Authority = identityUrl;
-                options.RequireHttpsMetadata = false;
-                options.Audience = "gateway";
-            });
-
-            return services;
-        }
-
-        public static IServiceCollection AddCustomMvc(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.AddHttpClient();
-            services.AddControllers();
-            services.AddOptions();
-            services.AddCors(options =>
-            {
-                options.AddPolicy("CorsPolicy",
-                    builder => builder
-                    .SetIsOriginAllowed((host) => true)
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials());
-            });
-
-            return services;
+            app.UseOcelot().Wait();
         }
     }
 }
