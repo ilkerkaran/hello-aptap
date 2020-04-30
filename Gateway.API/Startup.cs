@@ -24,7 +24,21 @@ namespace Gateway.API
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
-        {           
+        {
+            services.AddCors(options =>
+            {
+                options.AddPolicy("default",
+                      builder =>
+                      {
+                          using (var serviceProvider = services.BuildServiceProvider())
+                          {
+                              
+                              builder.WithOrigins("http://localhost:3000")
+                                .AllowAnyMethod()
+                                .AllowAnyHeader().AllowCredentials();
+                          }
+                      });
+            });
 
             var authenticationProviderKey = "auth-scheme";         
 
@@ -50,6 +64,7 @@ namespace Gateway.API
             }
 
             app.UseRouting();
+            app.UseCors("default");
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
